@@ -6,4 +6,7 @@
 ## 框架/工具
     * Vue、VueRouter、SQLite数据库、Node.js、Express
 
-#### 前后端均自己开发
+## 前后端均自己开发
+
+    * 后端文件：app.js
+    * 前端资源：static/dist 文件夹下为全部资源
