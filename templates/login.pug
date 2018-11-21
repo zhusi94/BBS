@@ -1,0 +1,45 @@
+extends layout.pug
+
+block content
+  form(action='/login' method='post' class="form-horizontal")
+    div(class="form-group")
+      label(class="col-sm-2 control-label" for="inputusername")
+        |用户名：
+      div(class="col-sm-10")
+        input(id="inputusername" class="form-control" type='text' autocomplete="off" name='username')
+
+    div(class="form-group")
+      label(class="col-sm-2 control-label" for="inoutpassword")
+        |密码：
+      div(class="col-sm-10")
+        input(id="inoutpassword" class="form-control" type='password' name='password')
+
+    div(class="form-group")
+      label(class="col-sm-2 control-label" for="inputcaptcha")
+        |验证码
+        |(不区分大小写)：
+      div(class="col-sm-10")
+        input(id="inputcaptcha" class="form-control" type="text" autocomplete="off" name="captcha")
+
+    img(src="/captcha" class="img-responsive center-block ")
+
+    button(class="btn btn-lg btn-primary btn-block") 登录
+
+block logic
+  script.
+    $(()=>{
+      $('form').on('submit',async function(e){
+        e.preventDefault()
+        try{ 
+          var req = await axios.post('/login',{
+            username:$('input[name="username"]').val(),
+            password:$('input[name="password"]').val(),
+            captcha:$('input[name="captcha"]').val(),
+          })
+          location.href = '/'
+        } catch(e) {
+          alert('用户名或密码错误')
+        }
+      })
+    })
+    

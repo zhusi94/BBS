@@ -1,0 +1,7 @@
+extends layout.pug
+
+block content
+  form(action="/add-post" method="post")
+    input(name="title")
+    textarea(name="content" placeholder="请输入内容")
+    BUTTON 提交

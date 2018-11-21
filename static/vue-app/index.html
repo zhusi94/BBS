@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="shortcut icon" type="images/x-icon" href="./favicon.ico">
+  <title>router-test</title>
+  <script src="../js/vue-2.5.17.js"></script>
+  <script src="../js/vue-router-v3.0.1.js"></script>
+  <script src="../js/axios-0.18.0.js"></script>
+</head>
+<body>
+  <div id="app">   
+    <router-link to="/">首页</router-link>
+    <router-link v-if="user" to="/publish">发布</router-link>
+    <router-link v-if="user" :to="/user/ + user.id"> 欢迎 {{user.name}} </router-link>
+
+    <a v-if="user" href="javascript:;" @click="logout">登出</a>
+    <router-link v-if="!user" to="/login">登录</router-link>
+    <router-link v-if="!user" to="/register">注册</router-link>
+
+    <div calss="dadawdawdadasw"></div>
+
+    <router-view></router-view>
+  </div>
+
+  <script type="text/javascript">
+
+
+    const router = new VueRouter({
+      
+      routes:[
+        {
+          path:'/',
+          name:'home',
+          component:{
+            template: 
+            `
+              <ul>
+                <li v-for="post in posts">
+                  <pre>
+                    <router-link :to="'/post/' + post.id">{{post.title}}</router-link> by {{post.name}} - {{new Date(post.timestamp)}}
+                  </pre>
+                </li>
+              </ul>
+            `,
+            data() {
+              return {
+                posts:[]
+              }
+            },
+            async created() {
+              var res = await axios.get('/api/posts')
+              this.posts = res.data
+            },
+          }
+        },
+        {
+          path:'/post/:postId',
+          name:'post',
+          component:{
+            template: 
+            `
+              <div>
+                <hgroup>
+                  <h4>{{post.title}}</h4>
+                  <h5><router-link :to="/user/ + post.userId">{{post.name}} </router-link> - {{post.timestamp}}</h5>
+                </hgroup>
+                <div>{{post.content}}</div>
+                <h4>Components:</h4>
+                <ul>
+                  <li v-for="comment in comments">
+                    <pre>
+                      {{comment.content}} - <router-link :to="/user/ + comment.userId">{{comment.name}} </router-link>
+                    </pre>
+                  </li>
+                </ul>
+                <div >
+                  <textarea v-model="myComment" cols="30" rows="10"></textarea>
+                  <button @click="postComment">发表评论</button>
+                </div>
+              </div>
+            `,
+            data (){
+              return {
+                post:{},
+                comments:[],
+                myComment:'',
+              }
+            },
+            methods: {
+              async postComment() {
+                var res = await axios.post('/add-comment/',{
+                  content: this.myComment.trim(),
+                  postId: this.$route.params.postId
+                })
+                this.myComment=''
+                var comment = res.data
+                this.comments.push(comment)
+              }
+            },
+            async created () {
+              var postId = this.$route.params.postId
+              var res = await axios.get('/api/post/'+ postId)
+              this.post = res.data[0]
+              var commentRes = await axios.get('/api/comments/' + postId)
+              this.comments = commentRes.data
+            }
+          }
+        },
+        {
+          path:'/login',
+          name:'login',
+          component:{
+            template:
+            `
+              <div>
+                用户名：<input type="text" v-model="username"/>
+                <br />
+                密  码：<input type="text" v-model="password"/>
+                <br />
+                验证码：<input type="text" v-model="captcha"/>
+                <br />
+                <img src="/captcha" alt="" />
+                <button @click="login">登录</button>
+                <p v-show="hasError">用户名或密码错误或验证码错误</p>
+              </div>
+            `,
+            data(){
+              return {
+                username:"",
+                password:"",
+                captcha:"",
+                hasError: false,
+              }
+            },
+            methods: {
+              async login(){
+                try{ 
+                  var res = await axios.post('/login',{
+                    username:this.username,
+                    password:this.password,
+                    captcha:this.captcha,
+                  })
+                  this.$root.user = res.data
+                  this.$router.push('/')
+                } catch (e) {
+                  this.hasError = true
+                }
+              },
+            }
+          }
+        },
+        {
+          path:'/publish',
+          name:'publish',
+          component:{
+            template:`
+              <div>
+                <h3>发布文章</h3>
+                <input type="text" v-model="title" />
+                <textarea  cols="30" rows="10" v-model="content"></textarea>
+                <button @click="publish">发布</button>
+              </div>
+            `,
+            methods:{
+              async publish(){
+                var res = await axios.post('/add-post',{
+                  title:this.title,
+                  content:this.content
+                })
+                var post = res.data
+                this.$router.push('/post/'+post.id)
+              },
+            },
+            data(){
+              return {
+                title:'',
+                content:'',
+              }
+            }
+          }
+        },
+        {
+          path:'/user/:userId',
+          name:'user',
+          component:{
+            template:`
+             <div>
+              <p>{{user.name}}</p>
+              <h2>{{user.name}}发布的帖子</h2>
+              <ul>
+                <li v-for="post in posts">
+                  <router-link :to="/post/ + post.id">{{post.title}}</router-link>
+                  <a href='javascript:;' @click="deletePost(post)">删除帖子</a>
+                </li>
+              </ul>
+              <h2>{{user.name}}最近发表过的评论</h2>
+              <ul>
+                <li v-for="comment in comments">
+                  <h3>{{comment.postTitle}}</h3>
+                  <span>{{comment.content}}</span>
+                  <a href='javascript:;' @click="deleteComment(comment)">删除评论</a>
+                </li>
+              </ul>
+             </div>
+            `,
+            data(){
+              return {
+                user:{},
+                posts:[],
+                comments:[],
+              }
+            },
+            methods:{
+              deletePost(post) {
+                axios.get('/delete-post/' + post.id)
+                this.$router.push('/user/'+this.user.id)
+              },
+              deleteComment(comment) {
+                axios.get('/delete-comment/' + comment.id)
+                this.$router.push('/user/'+this.user.id)
+              }
+            },
+            async created(){
+              debugger
+              var userId = this.$route.params.userId
+              var res = await axios.get("/api/user/" + userId)
+              this.user=res.data.user
+              this.posts=res.data.userPosts
+              this.comments = res.data.userComments
+            }
+          },
+        },
+        {
+          path:"/register",
+          name:'register',
+          component:{
+            template:`
+              <div>users...</div>
+            `
+          }
+          ,
+        },
+      ] 
+    })
+    var app = new Vue ({
+      el:'#app',
+      router,
+      data:{
+        user:null,
+      },
+      methods:{
+        logout(e) {
+          this.user=null
+          axios.get('/logout')
+        }
+      },
+      async created(){
+        var res = await axios.get('/api/userinfo')
+        this.$root.user = res.data
+
+      }
+    })
+
+  </script>
+</body>
+</html>

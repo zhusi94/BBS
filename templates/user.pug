@@ -1,0 +1,23 @@
+extends layout.pug
+
+block content
+  if user
+    div= user.name
+
+    div
+      h2 #{user.name} 发过的帖子
+      ul 
+        each post in posts
+          li 
+            a(href='/post/' + post.id)= post.title
+            a(href='/delete-post/' + post.id)  删除帖子
+      h2 #{user.name} 最近发表过的评论
+      ul
+        each comment in comments
+          li
+            h3
+              span #{comment.postTitle}
+            span=comment.content
+            a(href="/delete-comment/" + comment.id)  删除评论
+  else 
+    |没有您要找的用户

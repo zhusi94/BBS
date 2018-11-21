@@ -1,0 +1,61 @@
+extends layout.pug
+
+block content
+  div
+    h1= post.title
+    h3
+      span= new Date(post.timestamp).toLocaleString()
+      span 
+        a(href="/user/" + post.userId) 发帖人：#{post.name}
+        img(width=30 hight=30 src="/avatars/" + post.avatar, alt=post.name)
+    div= post.content
+
+    ul.comments
+      each comment in comments
+        li 
+          div
+            span= new Date(comment.timestamp).toLocaleString()
+            |  
+            img(width=30 hight=30 src="/avatars/" + comment.avatar, alt=comment.name)
+            |
+            span  
+              a(href="/user/"+comment.userId)= comment.name
+            |  
+          div= comment.content
+
+    form(action="/add-comment" method="post")
+      input(hidden=true name="postId" value=post.id)
+      textarea(placeholder="请输入您的评论" name="content")
+      br
+      button 提交评论
+
+block logic
+  script.
+    $(()=>{
+      $('form').on('submit',async e => {
+        e.preventDefault()
+        try{ 
+          var postId = $('input[name="postId"]').val()
+          var content = $('textarea[name="content"]').val()
+
+          var res = (await axios.post("/add-comment", {
+            postId,
+            content,
+          })).data
+        
+          $('ul.comments').append(`
+            <li> 
+            <div>
+              <span>${new Date(res.data.comment.timestamp)}</span> 
+              <img width="30" hight="30" src="/avatars/${res.data.comment.avatar}" alt="${res.data.comment.name}">
+              <span> <a href="/user/${res.data.comment.userId}">${res.data.comment.name}</a></span> 
+            </div>
+            <div>${content}</div>
+            </li>
+          `)
+
+        } catch (e) {
+
+        }
+      })
+    })
